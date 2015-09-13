@@ -26,10 +26,8 @@ type Collection interface {
 	// internal "reader". If there are no more data points available, the
 	// method may panic.
 	Next() DataPoint
-	// Returns the last data point in the collection, and decrements the
-	// internal "reader". If there is no previous value (that is, the
-	// reader index is 0), the method may panic.
-	Last() DataPoint
+	// Decrements the internal reader by the given amount.
+	Rewind(n int)
 	// Returns whether there are more data points available.
 	HasMore() bool
 	// Resets the collection counter, so that calling Next() once again
@@ -83,11 +81,8 @@ func (b *baseCollection) Next() DataPoint {
 	return pnt
 }
 
-func (b *baseCollection) Last() DataPoint {
-	b.idx -= 1
-	pnt := b.d.data[b.idx]
-
-	return pnt
+func (b *baseCollection) Rewind(n int) {
+	b.idx -= n
 }
 
 func (b *baseCollection) Reset() {

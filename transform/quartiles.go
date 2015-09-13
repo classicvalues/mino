@@ -46,7 +46,7 @@ SECTION:
 			if weight+current.Weight > target {
 				frac := (target - weight) / current.Weight
 				results[i-1] = last.Value*(1-frac) + current.Value*frac
-				data.Last()
+				data.Rewind(1)
 				continue SECTION
 			}
 

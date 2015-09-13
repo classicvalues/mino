@@ -9,7 +9,7 @@ import (
 )
 
 func TestStddevNormal(t *testing.T) {
-	result, err := mino.Analyze(fibonacci).Transform(transform.Stddev{})
+	result, err := mino.FromList(fibonacci).Transform(transform.Stddev{})
 	assert.Nil(t, err)
 
 	r := result.(transform.StddevResults)
@@ -18,23 +18,31 @@ func TestStddevNormal(t *testing.T) {
 }
 
 func TestStddevNormalEmpty(t *testing.T) {
-	result, err := mino.Analyze(empty).Transform(transform.Stddev{})
+	result, err := mino.FromList(empty).Transform(transform.Stddev{})
 	r := result.(transform.StddevResults)
-	assert.Nil(t, err)
+	assert.Equal(t, transform.InsufficientDataError, err)
 	assert.InEpsilon(t, 0, r.Deviation, epsilon)
 	assert.InEpsilon(t, 0, r.Average, epsilon)
 }
 
-func TestStddevNormalOne(t *testing.T) {
-	result, err := mino.Analyze(one).Transform(transform.Stddev{})
+func TestStddevNormalWeighted(t *testing.T) {
+	result, err := mino.FromPoints(weightedFib).Transform(transform.Stddev{})
 	r := result.(transform.StddevResults)
 	assert.Nil(t, err)
+	assert.InEpsilon(t, 6.25016, r.Deviation, epsilon)
+	assert.InEpsilon(t, 8.48138, r.Average, epsilon)
+}
+
+func TestStddevNormalOne(t *testing.T) {
+	result, err := mino.FromList(one).Transform(transform.Stddev{})
+	r := result.(transform.StddevResults)
+	assert.Equal(t, transform.InsufficientDataError, err)
 	assert.InEpsilon(t, 0, r.Deviation, epsilon)
 	assert.InEpsilon(t, 1, r.Average, epsilon)
 }
 
 func TestStddevBessel(t *testing.T) {
-	result, err := mino.Analyze(fibonacci).Transform(transform.Stddev{Bessel: true})
+	result, err := mino.FromList(fibonacci).Transform(transform.Stddev{Bessel: true})
 	assert.Nil(t, err)
 
 	r := result.(transform.StddevResults)
@@ -42,18 +50,10 @@ func TestStddevBessel(t *testing.T) {
 	assert.InEpsilon(t, 6.7500, r.Average, epsilon)
 }
 
-func TestStddevBesselEmpty(t *testing.T) {
-	result, err := mino.Analyze(empty).Transform(transform.Stddev{Bessel: true})
+func TestStddevBesselWeighted(t *testing.T) {
+	result, err := mino.FromPoints(weightedFib).Transform(transform.Stddev{Bessel: true})
 	r := result.(transform.StddevResults)
 	assert.Nil(t, err)
-	assert.InEpsilon(t, 0, r.Deviation, epsilon)
-	assert.InEpsilon(t, 0, r.Average, epsilon)
-}
-
-func TestStddevBesselOne(t *testing.T) {
-	result, err := mino.Analyze(one).Transform(transform.Stddev{Bessel: true})
-	r := result.(transform.StddevResults)
-	assert.Nil(t, err)
-	assert.InEpsilon(t, 0, r.Deviation, epsilon)
-	assert.InEpsilon(t, 1, r.Average, epsilon)
+	assert.InEpsilon(t, 6.84670, r.Deviation, epsilon)
+	assert.InEpsilon(t, 8.48138, r.Average, epsilon)
 }

@@ -1,13 +1,8 @@
 package transform
 
 import (
-	"math"
-	"sort"
-
 	"github.com/WatchBeam/mino"
 )
-
-const epsilon = 0.00000001
 
 // Quartiles segments the data into 4 sections, by recursively
 // taking the median of each section.
@@ -16,27 +11,49 @@ type Quartile struct {
 	Sections int
 }
 
-// Slices the data into quartiles.
-func (q Quartile) Transform(analyzer *mino.Analyzer, data []float64) (interface{}, error) {
-	target := make([]float64, len(data))
-	copy(target, data)
-	sort.Float64s(target)
+// Slices the data into sections, returning a slice of float64s.
+// Returns an error if the data set is empty.
+func (q Quartile) Transform(analyzer *mino.Analyzer, data mino.Collection) (interface{}, error) {
+	sections := q.Sections
+	if sections == 0 {
+		sections = 4
+	}
+	results := make([]float64, sections-1)
+	dividend := (1 + data.Weight()) / float64(sections)
 
-	sections := 4
-	if q.Sections > 0 {
-		sections = q.Sections
+	// todo(connor4312): my algorithm below behaves oddly when the data
+	// size is less than the number of requested sections. Whoever discovers
+	// a solution to it is awarded three cookies.
+	if data.Len() < sections {
+		return results, InsufficientDataError
 	}
 
-	size := float64(len(target)+1) / float64(sections)
-	results := make([]float64, sections-1)
+	data.Sort(func(a, b mino.DataPoint) bool {
+		return a.Value < b.Value
+	})
+
+	var weight float64
+	var prev mino.DataPoint
+
+SECTION:
 	for i := 1; i < sections; i++ {
-		idx, frac := math.Modf(float64(i)*size - 1)
-		half := int(idx)
-		if frac < epsilon {
-			results[i-1] = target[half]
-		} else {
-			results[i-1] = target[half]*(1-frac) + target[half+1]*frac
+		target := float64(i) * dividend
+		for data.HasMore() {
+			current := data.Next()
+			last := prev
+			prev = current
+
+			if weight+current.Weight > target {
+				frac := (target - weight) / current.Weight
+				results[i-1] = last.Value*(1-frac) + current.Value*frac
+				data.Last()
+				continue SECTION
+			}
+
+			weight += current.Weight
 		}
+
+		results[i-1] = prev.Value
 	}
 
 	return results, nil

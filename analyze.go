@@ -1,10 +1,10 @@
 package mino
 
 type Analyzer struct {
-	data []float64
+	data Collection
 }
 
-func Analyze(data []float64) *Analyzer {
+func Analyze(data Collection) *Analyzer {
 	return &Analyzer{
 		data: data,
 	}
@@ -12,5 +12,6 @@ func Analyze(data []float64) *Analyzer {
 
 // Runs a transform on the analyzer's contained data.
 func (a *Analyzer) Transform(t Transform) (interface{}, error) {
+	defer a.data.Reset()
 	return t.Transform(a, a.data)
 }

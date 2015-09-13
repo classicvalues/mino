@@ -10,14 +10,15 @@ type Sum struct{}
 var _ mino.Transform = Sum{}
 
 // Sums all the data values and returns a float64.
-func (s Sum) Transform(analyzer *mino.Analyzer, data []float64) (interface{}, error) {
+func (s Sum) Transform(analyzer *mino.Analyzer, data mino.Collection) (interface{}, error) {
 	return baseSum(data), nil
 }
 
-func baseSum(data []float64) float64 {
+func baseSum(data mino.Collection) float64 {
 	total := float64(0)
-	for _, value := range data {
-		total += value
+	for data.HasMore() {
+		x := data.Next()
+		total += x.Value * x.Weight
 	}
 
 	return total
@@ -26,13 +27,14 @@ func baseSum(data []float64) float64 {
 // Sum is a transform that calculates the average of a data set.
 type Average struct{}
 
-// Calculates the average of a data set.
-func (a Average) Transform(analyzer *mino.Analyzer, data []float64) (interface{}, error) {
+// Calculates the weighted average of a data set.
+func (a Average) Transform(analyzer *mino.Analyzer, data mino.Collection) (interface{}, error) {
 	average := float64(0)
 	n := float64(0)
-	for _, x := range data {
-		n += 1
-		average = average + (x-average)/n
+	for data.HasMore() {
+		x := data.Next()
+		n += x.Weight
+		average = average + (x.Value-average)/(n/x.Weight)
 	}
 
 	return average, nil
